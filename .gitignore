@@ -1,0 +1,4 @@
+.idea/
+CMakeLists.txt
+creds
+cmake-build-debug/
