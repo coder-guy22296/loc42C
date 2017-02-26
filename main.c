@@ -17,7 +17,7 @@
 #include "curl/curl.h"
 #include "jansson.h"
 
-size_t	handle_token_response(char *ptr, size_t size, size_t nmemb, void *userdata)
+size_t	handle_token_response(char *ptr, size_t size, size_t nmemb, void *token)
 {
 	json_t	*json_obj;
 	json_t	*token_obj;
@@ -26,7 +26,7 @@ size_t	handle_token_response(char *ptr, size_t size, size_t nmemb, void *userdat
 	json_obj = json_loadb(ptr, size * nmemb, JSON_DECODE_ANY, NULL);
 	token_obj = json_object_get(json_obj, "access_token");
 	token_str = (char *)json_string_value(token_obj);
-	ft_memmove(userdata, token_str, 64);
+	ft_memmove(token, token_str, 64);
 	free(json_obj);
 	free(token_obj);
 	free(token_str);
@@ -35,11 +35,14 @@ size_t	handle_token_response(char *ptr, size_t size, size_t nmemb, void *userdat
 
 char	*get_token(CURL *curl, char *uid, char *secret)
 {
+	char		*params;
 	char		*token;
 	CURLcode	res;
 
 	/* Malloc space for token */
-	if (!(token = (char *)ft_memalloc(65)))
+	token = (char *)ft_memalloc(65);
+	params = (char *)ft_memalloc(184);
+	if (!token || !params)
 		return (0);
 	/* get a curl handle */
 	curl = curl_easy_init();
@@ -48,7 +51,6 @@ char	*get_token(CURL *curl, char *uid, char *secret)
 		   just as well be a https:// URL if that is what should receive the
 		   data. */
 		curl_easy_setopt(curl, CURLOPT_URL, "https://api.intra.42.fr/oauth/token");
-		char *params = (char *)ft_memalloc(184);
 		sprintf(params, "grant_type=client_credentials&client_id=%s&client_secret=%s", uid, secret);
 		/* Now specify the POST data */
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, params);
@@ -71,15 +73,15 @@ char	*get_token(CURL *curl, char *uid, char *secret)
 	return (token);
 }
 
-size_t	handle_response(char *ptr, size_t size, size_t nmemb, void **userdata)
+size_t	handle_response(char *ptr, size_t size, size_t nmemb, void **response)
 {
 	void	*delete_me;
 	char	*c_str;
 
-	delete_me = *userdata;
+	delete_me = *response;
 	c_str = ft_strnew(size * nmemb);
 	ft_memmove(c_str, ptr, size * nmemb);
-	*userdata = ft_strjoin(*userdata, c_str);
+	*response = ft_strjoin(*response, c_str);
 	free(delete_me);
 	free(c_str);
 	return (size * nmemb);
