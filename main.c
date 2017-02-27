@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include "curl/curl.h"
 #include "jansson.h"
+#include <pthread.h>
 
 size_t	handle_token_response(char *ptr, size_t size, size_t nmemb, void *token)
 {
@@ -141,34 +142,115 @@ char	*get_user_location(CURL *curl, char *token, char *username)
 	return (location);
 }
 
-int		main(int argc, char** argv)
+void	load_credentials(char *filename, char **uid, char **secret)
 {
 	int		fd;
-	char	*uid;
-	char	*secret;
-	char	*token;
-	char	*location;
-	char	*output;
-	CURL	*curl;
-
-	curl_global_init(CURL_GLOBAL_ALL);
-	if ((fd = open("creds", O_RDONLY)) == -1)
+	if ((fd = open(filename, O_RDONLY)) == -1)
 	{
 		ft_putstr("bad credentials!\n");
 		exit(1);
 	}
-	get_next_line(fd, &uid);
-	get_next_line(fd, &secret);
-	token = get_token(curl, uid, secret);
+	get_next_line(fd, uid);
+	get_next_line(fd, secret);
+	close(fd);
+}
+
+void	load_user_list(char *filename, t_list **users, int *usr_cnt)
+{
+	int		fd;
+	char 	*line;
+
+	*usr_cnt = 0;
+	if ((fd = open(filename, O_RDONLY)) == -1)
+	{
+		ft_putstr("bad users file!\n");
+		exit(1);
+	}
+	while(get_next_line(fd, &line) == 1)
+	{
+		ft_lstaddend(users, ft_lstnew(line, ft_strlen(line)));
+		free(line);
+		(*usr_cnt)++;
+	}
+	close(fd);
+}
+
+typedef struct	s_thread_data
+{
+	CURL *curl;
+	char *token;
+	char *username;
+}				t_thread_data;
+
+void *thread_job(void *vargp)
+{
+	t_thread_data *params;
+	char	*location;
+	char	*output;
+
+
+	ft_putstr("thread spawned\n");
+	params = (t_thread_data *)vargp;
 	output = (char *)ft_memalloc(500);
-	location = get_user_location(curl, token, argv[1]);
-	sprintf(output, "%s is located at %s\n", argv[1], location);
+	ft_putstr("thread stuff\n");
+	location = get_user_location(params->curl, params->token, params->username);
+	ft_putstr("thread stuff\n");
+	sprintf(output, "%s is located at %s\n", params->username, location);
+	ft_putstr("thread stuff\n");
 	write(1, output, ft_strlen(output));
-	curl_global_cleanup();
+	ft_putstr("thread stuff\n");
+	//free(output);
+	//free(location);
+	//free(params->username);
+	ft_putstr("thread destroyed\n");
+	return NULL;
+}
+
+int		main(int argc, char** argv)
+{
+	int		usr_cnt;
+	char	*uid;
+	char	*secret;
+	char	*token;
+	t_list	*users;
+	t_list	*head;
+	CURL	*curl;
+	pthread_t *tids;
+	t_thread_data *params;
+	int i;
+
+	i = 0;
+	curl_global_init(CURL_GLOBAL_ALL);
+	load_credentials("creds", &uid, &secret);
+	ft_putstr("creds loaded\n");
+	ft_putstr("requesting token\n");
+	token = get_token(curl, uid, secret);
+	ft_putstr("token recieved\n");
+	ft_bzero(secret, ft_strlen(secret));
 	free(uid);
-	free(token);
-	free(output);
 	free(secret);
-	free(location);
+	load_user_list(argv[1], &users, &usr_cnt);
+	ft_putstr("users loaded\n");
+	tids = (pthread_t *)ft_memalloc(sizeof(pthread_t) * usr_cnt);
+	params = (t_thread_data *)ft_memalloc(sizeof(t_thread_data) * usr_cnt);
+	head = users;
+	i = 0;
+	while (head && i < 1)
+	{
+		params[i].curl = curl;
+		params[i].token = token;
+		params[i].username = (char *)head->content;
+		pthread_create(&tids[i], NULL, thread_job, (void *)&params);
+		pthread_join(tids[i], NULL);
+		i++;
+		head = head->next;
+	}
+	//i = 0;
+	//ft_putstr("joining threads\n");
+	//while (i < usr_cnt)
+	//	pthread_join(tids[i], NULL);
+	//ft_putstr("joined threads\n");
+	curl_global_cleanup();
+	free(token);
 	return (0);
 }
