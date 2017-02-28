@@ -125,21 +125,21 @@ char	*get_user_location(CURL *curl, char *token, char *username)
 			fprintf(stderr, "curl_easy_perform() failed: %s\n",
 					curl_easy_strerror(res));
 		/* Parse Response */
-		ft_putstr("about to start parsing!\n");
+		//ft_putstr("about to start parsing!\n");
 		json_obj = json_loadb(json_response, ft_strlen(json_response), JSON_DECODE_ANY, NULL);
-		ft_putstr("parse1!\n");
+		//ft_putstr("parse1!\n");
 		session_obj = json_array_get(json_obj, 0);
-		ft_putstr("parse2!\n");
+		//ft_putstr("parse2!\n");
 		//ft_putstr(/*json_response*/username);
 		loc_obj = json_object_get(session_obj, "host");
-		ft_putstr("parse3!\n");
+		//ft_putstr("parse3!\n");
 		loc_str = (char *)json_string_value(loc_obj);
-		ft_putstr("parse4!\n");
+		//ft_putstr("parse4!\n");
 
 		/* Malloc location data */
 		if (!(location = ft_strdup(loc_str)))
 			return (0);
-		ft_putstr("parse5!\n");
+		//ft_putstr("parse5!\n");
 		/* always cleanup */
 		free(url);
 		free(loc_str);
@@ -148,7 +148,7 @@ char	*get_user_location(CURL *curl, char *token, char *username)
 		free(session_obj);
 		free(json_response);
 		curl_easy_cleanup(curl);
-		ft_putstr("cleanup done!\n");
+		//ft_putstr("cleanup done!\n");
 	}
 	return (location);
 }
@@ -211,20 +211,20 @@ void *thread_job(void *vargp)
 //	ft_putstr(params->token);
 //	ft_putstr("\nuser: ");
 //	ft_putstr(params->username);
-//	ft_putstr("\nthread spawned<\n");
+	//ft_putstr("thread spawned\n");
 	output = (char *)ft_memalloc(500);
-	ft_putstr("-");
+	//ft_putstr("-");
 	location = get_user_location(curl, params->token, params->username);
-	ft_putstr("+");
+	//ft_putstr("+");
 	sprintf(output, "%s is located at %s\n", params->username, location);
-	ft_putstr("*");
+	//ft_putstr("*");
 	//ft_putstr("thread stuff\n");
 	write(1, output, ft_strlen(output));
 	//ft_putstr("thread stuff\n");
 	free(output);
 	free(location);
 	free(params->username);
-	//ft_putstr("thread destroyed>\n");
+	//ft_putstr("thread destroyed\n");
 	return NULL;
 }
 
@@ -253,15 +253,15 @@ int		main(int argc, char** argv)
 	free(secret);
 	load_user_list(argv[1], &users, &usr_cnt);
 	ft_putstr("users loaded\n");
-	head = users;
-	while (head)
-	{
-		ft_putstr("user: ");
-		ft_putstr((char *)head->content);
-		ft_putstr("\n");
-		head = head->next;
-	}
-	ft_putstr("===========================\n");
+//	head = users;
+//	while (head)
+//	{
+//		ft_putstr("user: ");
+//		ft_putstr((char *)head->content);
+//		ft_putstr("\n");
+//		head = head->next;
+//	}
+//	ft_putstr("===========================\n");
 
 
 
@@ -273,9 +273,9 @@ int		main(int argc, char** argv)
 	while (head && i < usr_cnt)
 	{
 		//params[i].curl = curl;
-		params[i].token = ft_strdup(token);
-		params[i].username = ft_strdup((char *)head->content);
-		ft_putstr((char *)head->content);
+		params[i].token = token;
+		params[i].username = (char *)head->content;
+		//ft_putstr((char *)head->content);
 		if(pthread_create(&tids[i], NULL, thread_job, (void *)&params[i]))
 		{
 			ft_putstr("thread failed!\n");
@@ -286,13 +286,13 @@ int		main(int argc, char** argv)
 		head = head->next;
 	}
 	i = 0;
-	ft_putstr("joining threads\n");
+	//ft_putstr("joining threads\n");
 	while (i < usr_cnt)
 	{
 		pthread_join(tids[i], NULL);
 		i++;
 	}
-	ft_putstr("joined threads\n");
+	//ft_putstr("joined threads\n");
 	curl_global_cleanup();
 	free(token);
 	return (0);
