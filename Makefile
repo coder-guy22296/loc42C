@@ -30,7 +30,7 @@ all: $(NAME)
 
 $(NAME): dependencies
 	gcc -c $(SRC) $(LIBI)
-	gcc -o $(NAME) $(OFILES) $(LIBS)
+	gcc -o $(NAME) $(OFILES) $(LIBS) -lpthread
 
 clean:
 	rm -rf $(OFILES)
@@ -49,7 +49,7 @@ test:
 	rm -f $(NAME)
 	rm -rf $(OFILES)
 	gcc -c $(SRC) $(LIBI)
-	gcc -o $(NAME) $(OFILES) $(LIBS)
+	gcc -o $(NAME) $(OFILES) $(LIBS) -lpthread
 
 norm:
 	norminette *.c *.h ./lib*/*.c ./lib*/*.h
